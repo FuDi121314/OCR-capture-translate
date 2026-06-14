@@ -1,0 +1,6 @@
+mss
+pygetwindow
+easyocr
+PyQt5
+requests
+keyboard
