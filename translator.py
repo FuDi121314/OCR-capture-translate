@@ -10,10 +10,10 @@ def translate(text: str) -> str:
             config.mtranserver_url,
             json={
                 "text": text,
-                "source": config.source_lang,
-                "target": config.target_lang
+                "from": config.source_lang,
+                "to": config.target_lang
             },
-            timeout=5
+            timeout=500
         )
         if resp.status_code == 200:
             return resp.json().get("translated_text", "")
