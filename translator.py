@@ -9,14 +9,15 @@ def translate(text: str) -> str:
         resp = requests.post(
             config.mtranserver_url,
             json={
-                "text": text,
                 "from": config.source_lang,
-                "to": config.target_lang
+                "to": config.target_lang,
+                "text": text,
+                "html": False
             },
             timeout=500
         )
         if resp.status_code == 200:
-            return resp.json().get("translated_text", "")
+            return resp.json().get("result", "")
         else:
             return f"[Error {resp.status_code}]"
     except Exception as e:

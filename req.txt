@@ -4,3 +4,4 @@ easyocr
 PyQt5
 requests
 keyboard
+torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121

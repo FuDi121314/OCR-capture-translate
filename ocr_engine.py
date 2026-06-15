@@ -1,11 +1,13 @@
 import easyocr
+import torch
 from config import config
 
 reader = None
 
 def init_ocr():
     global reader
-    reader = easyocr.Reader([config.source_lang], gpu=True)   # change to gpu=False if no CUDA
+    doIhaveGPU = torch.cuda.is_available()
+    reader = easyocr.Reader([config.source_lang], gpu=doIhaveGPU)   # change to gpu=False if no CUDA
 
 def do_ocr(image):
     """Run OCR on the image and return the concatenated text."""
