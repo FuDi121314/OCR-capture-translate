@@ -1,54 +1,103 @@
 from PyQt5 import QtCore, QtWidgets, QtGui
-import keyboard
 from config import config
 
-class Overlay(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
-        self.original_text = ""
-        self.translated_text = ""
-        self.show_original = False   # True shows original, False shows translation
+class TranslationLabel(QtWidgets.QLabel):
+    """A single floating label for one translated text region."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+        self.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.setWordWrap(False)
+        self.setStyleSheet("color: yellow; background-color: rgba(0, 0, 0, 180); padding: 2px;")
 
-        # Window flags: frameless, always on top, tool (doesn't show in taskbar on Windows)
+
+class Overlay(QtWidgets.QWidget):
+    """
+    A transparent window that follows a target window and places
+    translated text labels exactly where the original text was detected.
+    """
+    text_update_signal = QtCore.pyqtSignal(list)  # list of (x, y, w, h, translated_text)
+
+    def __init__(self, target_window_title: str):
+        super().__init__()
+        self.target_title = target_window_title
+        self.labels = []  # list of TranslationLabel
+
         self.setWindowFlags(
             QtCore.Qt.FramelessWindowHint |
             QtCore.Qt.WindowStaysOnTopHint |
             QtCore.Qt.Tool
         )
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)  # click-through
+        # NOTE: The overlay itself is NOT transparent for mouse events,
+        # but each label is. So you can click through the labels.
 
-        # Setup UI
-        self.label = QtWidgets.QLabel(self)
-        self.label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
-        self.label.setWordWrap(True)
-        self.label.setStyleSheet(
-            f"background-color: rgba(0, 0, 0, {int(config.overlay_opacity * 255)}); "
-            "color: white; padding: 10px; font-size: 16px;"
-        )
-        self.resize(800, 200)
+        self.resize(400, 200)
 
-        # Hotkey
-        keyboard.add_hotkey('ctrl+shift+t', self.toggle_display)
+        # Connect signal
+        self.text_update_signal.connect(self.update_labels)
 
-    def update_text(self, original: str, translated: str):
-        self.original_text = original
-        self.translated_text = translated
-        self._refresh_label()
+        # Timer to follow target window
+        self.tracker = QtCore.QTimer()
+        self.tracker.timeout.connect(self.follow_target)
+        self.tracker.start(100)
 
-    def toggle_display(self):
-        self.show_original = not self.show_original
-        self._refresh_label()
+        self.follow_target()
 
-    def _refresh_label(self):
-        text = self.original_text if self.show_original else self.translated_text
-        self.label.setText(text)
-        self.label.adjustSize()
-        self.adjustSize()
+    def update_labels(self, label_data: list):
+        """
+        label_data: list of tuples (x, y, w, h, translated_text)
+        Removes old labels and creates new ones at the given positions.
+        """
+        # Remove all existing labels
+        for lbl in self.labels:
+            lbl.deleteLater()
+        self.labels.clear()
 
-    def move_to(self, x, y, width, height):
-        self.setGeometry(x, y, width, height)
+        for (x, y, w, h, text) in label_data:
+            if not text.strip():
+                continue
+
+            lbl = TranslationLabel(self)
+            lbl.setText(text)
+
+            # Calculate font size based on the original text height
+            # Use ~80% of the box height for the font
+            font_size = max(8, int(h * 0.8))
+            font = lbl.font()
+            font.setPixelSize(font_size)
+            lbl.setFont(font)
+
+            # Position and size the label
+            lbl.setGeometry(int(x), int(y), max(int(w), 50), int(h))
+            lbl.show()
+            self.labels.append(lbl)
+
+    def follow_target(self):
+        """Move and resize the overlay to exactly cover the target window."""
+        from capture import get_window_rect
+        rect = get_window_rect(self.target_title)
+        if rect is None:
+            self.hide()
+            return
+
+        x, y, w, h = rect
+
+        if w <= 0 or h <= 0 or x < -10000 or y < -10000:
+            self.hide()
+            return
+
+        if not self.isVisible():
+            self.show()
+
+        screen = QtWidgets.QApplication.primaryScreen().availableGeometry()
+        x = max(x, screen.left())
+        y = max(y, screen.top())
+        w = min(w, screen.width())
+        h = min(h, screen.height())
+
+        self.setGeometry(x, y, w, h)
 
     def closeEvent(self, event):
-        keyboard.remove_hotkey('ctrl+shift+t')
+        self.tracker.stop()
         super().closeEvent(event)

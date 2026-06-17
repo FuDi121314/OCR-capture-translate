@@ -6,12 +6,21 @@ reader = None
 
 def init_ocr():
     global reader
-    doIhaveGPU = torch.cuda.is_available()
-    reader = easyocr.Reader([config.source_lang], gpu=doIhaveGPU)   # change to gpu=False if no CUDA
+    doihavegpu = torch.cuda.is_available()
+    print(f"EasyOCR GPU available: {doihavegpu}")
+    reader = easyocr.Reader([config.source_lang], gpu=doihavegpu)
 
-def do_ocr(image):
-    """Run OCR on the image and return the concatenated text."""
+def do_ocr_with_boxes(image):
+    """
+    Run OCR and return a list of (bbox, text, confidence).
+    bbox is [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] in pixel coordinates.
+    """
     if reader is None:
         init_ocr()
-    results = reader.readtext(image, detail=0)   # detail=0 returns only text
-    return " ".join(results)   # join lines with space
+    results = reader.readtext(image, detail=1)  # detail=1 gives bounding boxes
+    return results
+
+def do_ocr(image):
+    """Legacy: return only concatenated text."""
+    results = do_ocr_with_boxes(image)
+    return " ".join(r[1] for r in results)
