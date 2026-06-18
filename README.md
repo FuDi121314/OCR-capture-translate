@@ -1,17 +1,33 @@
-# OCR-capture-translate
+# ```
+
+```OCR-capture-translate
+
+```
+
 capture screen and real time translate with OCR
 
-## install the environment  
-to install the environment, run  
+## install the environment
+
+to install the environment, run
+
 ```
 cd to/your/path/
 python -m venv .venv    # use virtual environment if you want
 pip install -r req.txt
 ```
-or you can make a virtual environment for this project. 
+
+or you can make a virtual environment for this project.
 
 install [MTranServer](https://github.com/xxnuo/MTranServer)
 you can install and run it by:
+
 ```
 npx mtranserver@latest
 ```
+
+## Remark
+
+* Overlay being too **messy** and lag & sometime the OCR capturn useless info.
+* Some info may wrong by OCR or Overlay.
+* Some words is too lange, some result is not readable enough
+* **Considering to change program lang. or lib.**
