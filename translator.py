@@ -17,7 +17,10 @@ def translate(text: str) -> str:
             timeout=500
         )
         if resp.status_code == 200:
+            #print("received from mtranserver")             # debugger
+            #print("received from mtranserver", resp.json())      # debugger
             return resp.json().get("result", "")
+
         else:
             return f"[Error {resp.status_code}]"
     except Exception as e:
