@@ -23,7 +23,7 @@ npx mtranserver@latest
 
 ## Remark
 
-* Overlay being too **messy** and lag & sometime the OCR capturn useless info.
+* Overlay being too **messy** and lag & sometime the OCR capture useless info.
 * Some info may wrong by OCR or Overlay.
 * Some words is too lange, some result is not readable enough
 * **Considering to change program lang. or lib.**
