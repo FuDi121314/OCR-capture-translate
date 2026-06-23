@@ -254,6 +254,14 @@ class ManagerWindow(QtWidgets.QWidget):
                 time.sleep(config.update_interval_ms / 1000.0)
                 continue
             
+            # debugger
+            '''
+            if img is not None:
+                import cv2
+                cv2.imwrite("debug/capture.png", img)
+            '''
+            #debugger
+            
             print("capture_window succeeded, doing OCR...")     #debugger
             ocr_results = do_ocr(img)
             print(f"OCR returned {len(ocr_results)} items")     #debugger
