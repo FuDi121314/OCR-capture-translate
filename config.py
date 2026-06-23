@@ -10,5 +10,5 @@ class Config:
     overlay_opacity: float = 0.85   
     update_interval_ms: int = 850   # refresh time
 
-# constructor
+# Just a constructor
 config = Config()

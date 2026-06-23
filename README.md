@@ -21,11 +21,11 @@ you can install and run it by:
 npx mtranserver@latest
 ```
 
-## Remark
+## Remark & ToDo
 
-* [ ] idk, but hope to increasr efficiency
+* [ ] idk, but hope to increase efficiency
 * [ ] the blackground of the overlay word can be blur to enhance readability
-* [X] the below issue is found that caused by capturing the overlayed result in window
+* [X] the below issue is found that caused by capturing the overlayed result in window, **fixed**
 * Overlay being too **messy** and lag & sometime the OCR capture useless info.
 * Some info may wrong by OCR or Overlay.
 * Some words is too lange, some result is not readable enough
