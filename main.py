@@ -254,9 +254,9 @@ class ManagerWindow(QtWidgets.QWidget):
                 time.sleep(config.update_interval_ms / 1000.0)
                 continue
             
-            # print("capture_window succeeded, doing OCR...")     #debugger
+            print("capture_window succeeded, doing OCR...")     #debugger
             ocr_results = do_ocr(img)
-            # print(f"OCR returned {len(ocr_results)} items")     #debugger
+            print(f"OCR returned {len(ocr_results)} items")     #debugger
     
             # Build label data: [(x, y, w, h, translated_text), ...]
             label_data = []
@@ -285,10 +285,10 @@ class ManagerWindow(QtWidgets.QWidget):
                 translated = translate(text)
                 label_data.append((x, y, max(w, 50), max(h, 15), translated, text_color, outline_color))
     
-            # print(f"Built {len(label_data)} labels")
+            print(f"Built {len(label_data)} labels")
             if title in self.overlays:
                 overlay = self.overlays[title]
-                # print(f"Emitting {len(label_data)} labels for {title}")       #debugger
+                print(f"Emitting {len(label_data)} labels for {title}")       #debugger
                 overlay.text_update_signal.emit(label_data)
             else:
                 print(f"Overlay for '{title}' not found in self.overlays")      # this is not debugger, sb

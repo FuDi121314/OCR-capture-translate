@@ -23,6 +23,9 @@ npx mtranserver@latest
 
 ## Remark
 
+* [ ] idk, but hope to increasr efficiency
+* [ ] the blackground of the overlay word can be blur to enhance readability
+* [X] the below issue is found that caused by capturing the overlayed result in window
 * Overlay being too **messy** and lag & sometime the OCR capture useless info.
 * Some info may wrong by OCR or Overlay.
 * Some words is too lange, some result is not readable enough

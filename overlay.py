@@ -7,15 +7,15 @@ class OutlinedLabel(QtWidgets.QLabel):
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setAutoFillBackground(False) 
+        self.setAutoFillBackground(False)
         self.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.setWordWrap(False)
-        self.setStyleSheet("background: transparent; border: none;") 
+        self.setStyleSheet("background: transparent; border: none;")
 
         self._text_color = text_color
         self._outline_color = outline_color
 
-        # Transparent background
+        # Transparent background (duplicate, but fine)
         self.setStyleSheet("background: transparent;")
 
     def setColors(self, text_color, outline_color):
@@ -48,7 +48,7 @@ class OutlinedLabel(QtWidgets.QLabel):
 
 
 class Overlay(QtWidgets.QWidget):
-    text_update_signal = QtCore.pyqtSignal(list)
+    text_update_signal = QtCore.pyqtSignal(list)  # list of (x, y, w, h, text, text_color, outline_color)
 
     def __init__(self, target_window_title: str):
         super().__init__()
@@ -61,7 +61,7 @@ class Overlay(QtWidgets.QWidget):
             QtCore.Qt.Tool
         )
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-
+        # No WA_DisableHighDpiScaling – we'll handle DPI conversion manually
 
         self.resize(400, 200)
 
@@ -75,54 +75,63 @@ class Overlay(QtWidgets.QWidget):
         self.follow_target()
 
     def update_labels(self, label_data: list):
-        """Remove old labels and create new ones at positions adjusted for DPI."""
-        # Remove existing labels
-        # print(f"update_labels called with {len(label_data)} items")     #debugger
+        """
+        label_data: list of tuples (x, y, w, h, text, text_color, outline_color)
+        All coordinates are physical pixels (from OCR on the captured image).
+        We convert them to logical pixels using the overlay's DPR.
+        """
+        # Remove all existing labels
         for lbl in self.labels:
             lbl.deleteLater()
         self.labels.clear()
-
-        # Get the DPR of the screen this overlay is on
+    
+        # Get the DPR of this overlay (assumes overlay is on the correct screen)
         dpr = self.devicePixelRatioF()
-
+        # print(f"update_labels: using DPR = {dpr}")   # debug
+    
         for (x, y, w, h, text, text_color, outline_color) in label_data:
             if not text.strip():
                 continue
-
+            
             # Convert physical coordinates to logical pixels
-            x_log = int(x / dpr)
-            y_log = int(y / dpr)
-            w_log = int(w / dpr)
-            h_log = int(h / dpr)
-
+            x_log = int(round(x / dpr))
+            y_log = int(round(y / dpr))
+            w_log = int(round(w / dpr))
+            h_log = int(round(h / dpr))
+    
+            # print(f"  label physical ({x},{y},{w},{h}) -> logical ({x_log},{y_log},{w_log},{h_log})")  # debug
+    
             lbl = OutlinedLabel(text_color, outline_color, self)
             lbl.setText(text)
-
+    
+            # TEMPORARY: force a visible background to see if labels appear
+            lbl.setStyleSheet("background: rgba(255,0,0,128); color: white; border: 1px solid blue;")
+    
             # Font size based on logical height
             font_size = max(8, int(h_log * 0.8))
             font = lbl.font()
             font.setPixelSize(font_size)
             lbl.setFont(font)
-
+    
             lbl.setGeometry(x_log, y_log, max(w_log, 50), max(h_log, 15))
             lbl.show()
             self.labels.append(lbl)
-            # print(f"Creating label with text_color: {text_color.name()}, outline: {outline_color.name()}")      #debugger
-            
-            
+            # print(f"Creating label with text_color: {text_color.name()}, outline: {outline_color.name()}")  # debug
+    
+        # Force repaint
+        self.update()
+
     def follow_target(self):
         """Move and resize the overlay to exactly cover the target window (DPI‑aware)."""
         from capture import get_window_rect
 
         rect = get_window_rect(self.target_title)
-        
-        # print(f"follow_target: rect = {rect}") #debugger
-         
         if rect is None:
             self.hide()
             return
 
         x_phys, y_phys, w_phys, h_phys = rect
+        # print(f"follow_target: physical rect = {rect}") #debugger
 
         # Find the screen that contains the window's top-left point (physical coordinates)
         point = QtCore.QPoint(x_phys, y_phys)
@@ -135,7 +144,10 @@ class Overlay(QtWidgets.QWidget):
             screen = QtWidgets.QApplication.primaryScreen()
 
         # Get device pixel ratio for this screen
-        dpr = screen.devicePixelRatio() if hasattr(screen, 'devicePixelRatio') else self.devicePixelRatioF()
+        if hasattr(screen, 'devicePixelRatio'):
+            dpr = screen.devicePixelRatio()
+        else:
+            dpr = self.devicePixelRatioF()
 
         # Convert physical to logical pixels
         x_log = x_phys / dpr
@@ -150,7 +162,8 @@ class Overlay(QtWidgets.QWidget):
         w_log = min(w_log, screen_geom.width())
         h_log = min(h_log, screen_geom.height())
 
-        self.setGeometry(int(round(x_log)), int(round(y_log)), int(round(w_log)), int(round(h_log)))
+        self.setGeometry(int(round(x_log)), int(round(y_log)),
+                         int(round(w_log)), int(round(h_log)))
 
         if not self.isVisible():
             self.show()
